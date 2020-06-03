@@ -1,0 +1,8 @@
+data/
+exp/
+mfcc/
+external/
+# raw can be a symlink
+raw
+
+.vscode
