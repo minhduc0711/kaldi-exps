@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+train_data_dir=$1
+
+if [ "$#" -ne 1 ]; then
+    echo "ERROR: $0"
+    echo "USAGE: $0 <train_data_dir>"
+    exit 1
+fi
+
 dest_dir=data/local/dict
 mkdir -p $dest_dir
 
@@ -11,11 +19,10 @@ fi
 # . ~/miniconda3/etc/profile.d/conda.sh
 # conda activate speech-recognition || exit 1
 # echo `which python`
-~/miniconda3/envs/speech-recognition/bin/python local/prune_lexicon.py \
+python3 local/prune_lexicon.py \
         --src external/librispeech-lexicon.txt \
         --dst ${dest_dir}/lexicon.txt \
-        --trans data/train-clean-100/text 
-# cp external/librispeech-lexicon.txt ${dest_dir}/lexicon.txt
+        --trans ${train_data_dir}/text 
 
 # silence_phones.txt
 echo -e "SIL\\nSPN" > "${dest_dir}/silence_phones.txt"
