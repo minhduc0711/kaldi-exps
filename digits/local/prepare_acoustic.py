@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-audio_dir = Path("recordings/")
+audio_dir = Path("raw/free-spoken-digit-dataset/recordings")
 digit_2_text = {
     "0": "ZERO",
     "1": "ONE",

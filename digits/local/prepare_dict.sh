@@ -4,7 +4,10 @@ lang_dir=data/local/dict
 
 mkdir $lang_dir -p
 # lexicon.txt
-python local/prune_lexicon.py full_lexicon.txt data/train/text ${lang_dir}/lexicon.txt  # Keep only words that are present in the datset
+python local/prune_lexicon.py \
+        --src external/cmudict-0.7b \
+        --dst ${lang_dir}/lexicon.txt \
+        --trans data/train/text 
 # silence_phones.txt
 echo -e "SIL\\nSPN" > "${lang_dir}/silence_phones.txt"
 # nonsilence_phones.txt
