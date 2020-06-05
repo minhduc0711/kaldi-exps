@@ -32,7 +32,7 @@ with open(args.dst, "w") as f:
     for word in present_words:
         if word in pronun_dict:
             for pronun in pronun_dict[word]:
-                f.write(f"{word} {pronun}\n")
+                f.write("{} {}\n".format(word, pronun))
         else:
             unknown_words.append(word)
-print(f"{len(unknown_words)} words are not in the lexicon: {unknown_words}")
+print("{} words are not in the lexicon: {}".format(len(unknown_words), unknown_words)
