@@ -41,7 +41,6 @@ if [ "$#" -ne 1 ]; then
 fi
 
 raw_train_dir=$1
-# run=$2
 
 . local/util_funcs.sh
 
@@ -52,12 +51,6 @@ prep_train_audio=1
 extract_train_feats=1
 compile_Lfst=1
 train_gmm=1
-
-prep_lm=0
-compile_graph=0
-prep_test_audio=0
-extract_test_feats=0
-decode_test=0
 #
 ##
 ###
@@ -157,77 +150,6 @@ if [ "$train_gmm" -eq "1" ]; then
     $exp_dir \
     $num_procs \
     $train_subset_name
-fi
-
-if [ "$prep_lm" -eq "1" ]; then
-
-  printf "\n####==============####\n"
-  printf "#### PREPARING LM ####\n"
-  printf "####==============####\n\n"
-
-  local/prepare_lm.sh || exit 1
-
-fi
-
-if [ "$compile_graph" -eq "1" ]; then
-
-  printf "\n####===================####\n"
-  printf "#### GRAPH COMPILATION ####\n"
-  printf "####===================####\n\n"
-
-  utils/mkgraph.sh \
-    $input_dir \
-    $data_dir \
-    $data_dir/lang_decode \
-    $exp_dir/triphones/graph \
-    $exp_dir/triphones/tree \
-    $exp_dir/triphones/final.mdl ||
-    printf "\n####\n#### ERROR: mkgraph.sh \n####\n\n" ||
-    exit 1
-
-fi
-
-if [ "$prep_test_audio" -eq "1" ]; then
-
-  printf "\n####==========================####\n"
-  printf "#### TESTING AUDIO DATA PREP ####\n"
-  printf "####==========================####\n\n"
-
-  local/prepare_audio_data.sh \
-    $test_data_dir \
-    $input_dir/transcripts.test \
-    $data_dir \
-    test
-fi
-
-if [ "$extract_test_feats" -eq "1" ]; then
-
-  printf "\n####=========================####\n"
-  printf "#### TEST FEATURE EXTRACTION ####\n"
-  printf "####=========================####\n\n"
-
-  ./extract_feats.sh \
-    $data_dir/test \
-    $plp_dir \
-    $num_procs
-
-fi
-
-if [ "$decode_test" -eq "1" ]; then
-
-  printf "\n####================####\n"
-  printf "#### BEGIN DECODING ####\n"
-  printf "####================####\n\n"
-
-  suffix=${corpus_name}_${run}
-
-  ./test_gmm.sh \
-    $exp_dir/triphones/graph/HCLG.fst \
-    $exp_dir/triphones/final.mdl \
-    $data_dir/test \
-    $suffix \
-    $num_procs
-
 fi
 
 exit
