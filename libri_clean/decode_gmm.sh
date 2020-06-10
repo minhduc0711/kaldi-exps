@@ -92,7 +92,7 @@ if [ "$decode_test" -eq "1" ]; then
 
   prompt_rm_dir ${model_dir}/decode
 
-  steps/decode.sh \
+  steps/decode_fmllr.sh \
     --config ${config_dir}/decode.conf \
     --nj $num_procs \
     --cmd $cmd \
