@@ -47,9 +47,10 @@ raw_train_dir=$1
 ### STAGES
 ##
 #
-prep_train_audio=1
-extract_train_feats=1
-compile_Lfst=1
+prep_train_audio=0
+extract_train_feats=0
+split_train_data=1
+compile_Lfst=0
 train_gmm=1
 #
 ##
@@ -58,11 +59,12 @@ train_gmm=1
 ### HYPER-PARAMETERS
 ##
 #
+num_iters_mono=40
 tot_gauss_mono=1000
-num_leaves_tri=1000
+
+num_iters_tri=35
 tot_gauss_tri=2000
-num_iters_mono=25
-num_iters_tri=25
+num_leaves_tri=10000
 #
 ##
 ###
@@ -120,6 +122,15 @@ if [ "$extract_train_feats" -eq "1" ]; then
   # utils/split_data.sh $train_acoustic_dir $num_procs || exit 1
 fi
 
+if [ $split_train_data -eq 1 ]; then
+  # Make small data subsets for easier alignment during early training stages
+  # the full train-clean-100 has 29k utterances
+  prompt_rm_dir ${data_dir}/{train-2k-shortest,train-5k,train-10k}
+  utils/subset_data_dir.sh --shortest $train_acoustic_dir 2000 ${data_dir}/train-2k-shortest
+  utils/subset_data_dir.sh $train_acoustic_dir 5000 ${data_dir}/train-5k
+  utils/subset_data_dir.sh $train_acoustic_dir 10000 ${data_dir}/train-10k
+fi
+
 if [ "$compile_Lfst" -eq "1" ]; then
 
   printf "\n####====================####\n"
@@ -129,7 +140,7 @@ if [ "$compile_Lfst" -eq "1" ]; then
   prompt_rm_dir ${data_dir}/local ${data_dir}/lang
 
   local/prepare_dict.sh $train_acoustic_dir || exit 1
-  utils/prepare_lang.sh --position-dependent-phones false \
+  utils/prepare_lang.sh \
     ${data_dir}/local/dict ${unknown_word} ${data_dir}/local/lang ${data_dir}/lang || exit 1
 
 fi

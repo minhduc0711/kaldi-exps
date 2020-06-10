@@ -59,30 +59,44 @@ exp_dir=$7
 num_processors=$8
 subset_name=$9
 
+# logging purposes
+script_start_time=$(date +"%d-%m-%y_%H-%M-%S")
+log_dir=logs
+if [ ! -d $log_dir ]; then
+  mkdir -p $log_dir
+fi
+
 if [ "$train_monophones" -eq "1" ]; then
   printf "\n####===========================####\n"
   printf "#### BEGIN TRAINING MONOPHONES ####\n"
   printf "####===========================####\n\n"
 
-  prompt_rm_dir ${exp_dir}/monophones ${exp_dir}/monophones_aligned
+  prompt_rm_dir ${exp_dir}/mono ${exp_dir}/mono_ali_5k
 
   printf "#### Train Monophones ####\n"
+
+  t0="$(date -u +%s.%N)"
 
   steps/train_mono.sh \
     --cmd "$cmd" \
     --nj $num_processors \
+    --boost-silence 1.25 \
     --num-iters $num_iters_mono \
     --totgauss $tot_gauss_mono \
     --initial-beam 6 \
-    ${data_dir}/${subset_name} \
+    ${data_dir}/train-2k-shortest \
     ${data_dir}/lang \
-    ${exp_dir}/monophones ||
-    printf "\n####\n#### ERROR: train_mono.sh \n####\n\n" ||
-    exit 1
+    ${exp_dir}/mono || exit 1
 
-  ../../../src/gmmbin/gmm-info ${exp_dir}/monophones/final.mdl
+  t1="$(date -u +%s.%N)"
+  elapsed="$(bc <<<"$t1-$t0")"
+  echo "Training monophones took: ${elapsed}s" >> logs/runtime_${script_start_time}
+
+  ../../../src/gmmbin/gmm-info ${exp_dir}/mono/final.mdl
 
   printf "#### Align Monophones ####\n"
+
+  t0="$(date -u +%s.%N)"
 
   steps/align_si.sh \
     --cmd "$cmd" \
@@ -90,12 +104,14 @@ if [ "$train_monophones" -eq "1" ]; then
     --boost-silence 1.25 \
     --beam 10 \
     --retry-beam 40 \
-    ${data_dir}/${subset_name} \
+    ${data_dir}/train-5k \
     ${data_dir}/lang \
-    ${exp_dir}/monophones \
-    ${exp_dir}/monophones_aligned ||
-    printf "\n####\n#### ERROR: align_si.sh \n####\n\n" ||
-    exit 1
+    ${exp_dir}/mono \
+    ${exp_dir}/mono_ali_5k || exit 1
+
+  t1="$(date -u +%s.%N)"
+  elapsed="$(bc <<<"$t1-$t0")"
+  echo "Aligning monophones took: ${elapsed}s" >> logs/runtime_${script_start_time}
 
   printf "\n####===========================####\n"
   printf "#### END TRAINING MONOPHONES ####\n"
@@ -109,39 +125,48 @@ if [ "$train_triphones" -eq "1" ]; then
   printf "#### BEGIN TRAINING TRIPHONES ####\n"
   printf "####==========================####\n\n"
 
-  prompt_rm_dir ${exp_dir}/triphones ${exp_dir}/triphones_aligned
+  prompt_rm_dir ${exp_dir}/tri_5k ${exp_dir}/tri_ali_10k
 
   printf "### Train Triphones ###\n"
 
+  t0="$(date -u +%s.%N)"
+
+  # First triphone system on 5k subset
   steps/train_deltas.sh \
     --cmd "$cmd" \
     --num-iters $num_iters_tri \
     --beam 10 \
+    --boost-silence 1.25 \
     $num_leaves_tri \
     $tot_gauss_tri \
-    ${data_dir}/${subset_name} \
+    ${data_dir}/train-5k \
     ${data_dir}/lang \
-    ${exp_dir}/monophones_aligned \
-    ${exp_dir}/triphones ||
-    printf "\n####\n#### ERROR: train_deltas.sh \n####\n\n" ||
-    exit 1
+    ${exp_dir}/mono_ali_5k \
+    ${exp_dir}/tri_5k || exit 1
 
-  ../../../src/gmmbin/gmm-info ${exp_dir}/triphones/final.mdl
+  t1="$(date -u +%s.%N)"
+  elapsed="$(bc <<<"$t1-$t0")"
+  echo "Training triphones 5k took: ${elapsed}s" >> logs/runtime_${script_start_time}
+
+  ../../../src/gmmbin/gmm-info ${exp_dir}/tri_5k/final.mdl
 
   printf "### Align Triphones ###\n"
+
+  t0="$(date -u +%s.%N)"
 
   steps/align_si.sh \
     --cmd "$cmd" \
     --nj $num_processors \
-    --boost-silence 1.25 \
     --beam 10 \
     --retry-beam 40 \
-    ${data_dir}/${subset_name} \
+    ${data_dir}/train-10k \
     ${data_dir}/lang \
-    ${exp_dir}/triphones \
-    ${exp_dir}/triphones_aligned ||
-    printf "\n####\n#### ERROR: align_si.sh \n####\n\n" ||
-    exit 1
+    ${exp_dir}/tri_5k \
+    ${exp_dir}/tri_ali_10k || exit 1
+
+  t1="$(date -u +%s.%N)"
+  elapsed="$(bc <<<"$t1-$t0")"
+  echo "Aligning triphones took: ${elapsed}s" >> logs/runtime_${script_start_time}
 
   printf "\n####========================####\n"
   printf "#### END TRAINING TRIPHONES ####\n"
@@ -155,38 +180,48 @@ if [ "$adapt_models" -eq "1" ]; then
   printf "#### BEGIN SPEAKER ADAPTATION ####\n"
   printf "####==========================####\n\n"
 
-  prompt_rm_dir ${exp_dir}/triphones_lda_mllt \
-      ${exp_dir}/triphones_lda_mllt_aligned \
-      ${exp_dir}/triphones_lda_mllt_sat \
-      ${exp_dir}/triphones_lda_mllt_sat_aligned
+  prompt_rm_dir ${exp_dir}/tri_lda_mllt_10k \
+      ${exp_dir}/tri_lda_mllt_ali_10k \
+      ${exp_dir}/tri_lda_mllt_sat_10k \
+      ${exp_dir}/tri_lda_mllt_sat_ali \
+      ${exp_dir}/tri_sat_final
 
   printf "### Begin LDA + MLLT Triphones ###\n"
 
+  t0="$(date -u +%s.%N)"
+
   steps/train_lda_mllt.sh \
     --cmd "$cmd" \
+    --num-iters $num_iters_tri \
     --splice-opts "--left-context=3 --right-context=3" \
-    $num_leaves_tri \
-    $tot_gauss_tri \
-    ${data_dir}/${subset_name} \
+    2500 \
+    15000 \
+    ${data_dir}/train-10k \
     ${data_dir}/lang \
-    ${exp_dir}/triphones_aligned \
-    ${exp_dir}/triphones_lda_mllt ||
-    printf "\n####\n#### ERROR: train_lda_mllt.sh \n####\n\n" ||
-    exit 1
+    ${exp_dir}/tri_ali_10k \
+    ${exp_dir}/tri_lda_mllt_10k || exit 1
 
-  ../../../src/gmmbin/gmm-info ${exp_dir}/triphones_lda_mllt/final.mdl
+  t1="$(date -u +%s.%N)"
+  elapsed="$(bc <<<"$t1-$t0")"
+  echo "Training LDA+MLLT triphones took: ${elapsed}s" >> logs/runtime_${script_start_time}
+
+  ../../../src/gmmbin/gmm-info ${exp_dir}/tri_lda_mllt_10k/final.mdl
 
   printf "### Align LDA + MLLT Triphones ###\n"
+
+  t0="$(date -u +%s.%N)"
 
   steps/align_si.sh \
     --cmd "$cmd" \
     --nj $num_processors \
-    ${data_dir}/${subset_name} \
+    ${data_dir}/train-10k \
     ${data_dir}/lang \
-    ${exp_dir}/triphones_lda_mllt \
-    ${exp_dir}/triphones_lda_mllt_aligned ||
-    printf "\n####\n#### ERROR: align_si.sh \n####\n\n" ||
-    exit 1
+    ${exp_dir}/tri_lda_mllt_10k \
+    ${exp_dir}/tri_lda_mllt_ali_10k || exit 1
+
+  t1="$(date -u +%s.%N)"
+  elapsed="$(bc <<<"$t1-$t0")"
+  echo "Aligning LDA+MLLT triphones took: ${elapsed}s" >> logs/runtime_${script_start_time}
 
   printf "\n####===========================####\n"
   printf "#### BEGIN TRAINING SAT (fMLLR) ####\n"
@@ -194,30 +229,59 @@ if [ "$adapt_models" -eq "1" ]; then
 
   printf "### Train LDA + MLLT + SAT Triphones ###\n"
 
+  t0="$(date -u +%s.%N)"
+
   steps/train_sat.sh \
     --cmd "$cmd" \
-    $num_leaves_tri \
-    $tot_gauss_tri \
-    ${data_dir}/${subset_name} \
+    --num-iters $num_iters_tri \
+    2500 \
+    15000 \
+    ${data_dir}/train-10k \
     ${data_dir}/lang \
-    ${exp_dir}/triphones_lda_mllt_aligned \
-    ${exp_dir}/triphones_lda_mllt_sat ||
-    printf "\n####\n#### ERROR: train_sat.sh \n####\n\n" ||
-    exit 1
+    ${exp_dir}/tri_lda_mllt_ali_10k \
+    ${exp_dir}/tri_lda_mllt_sat_10k || exit 1
 
-  ../../../src/gmmbin/gmm-info ${exp_dir}/triphones_lda_mllt_sat/final.mdl
+  t1="$(date -u +%s.%N)"
+  elapsed="$(bc <<<"$t1-$t0")"
+  echo "Training LDA+MLLT+SAT triphones took: ${elapsed}s" >> logs/runtime_${script_start_time}
 
-  printf "### Align LDA + MLLT + SAT Triphones ###\n"
+  ../../../src/gmmbin/gmm-info ${exp_dir}/tri_lda_mllt_sat_10k/final.mdl
+
+  printf "### Align LDA + MLLT + SAT Triphones on the whole train dataset ###\n"
+
+  t0="$(date -u +%s.%N)"
 
   steps/align_fmllr.sh \
     --cmd "$cmd" \
     --nj $num_processors \
     ${data_dir}/${subset_name} \
     ${data_dir}/lang \
-    ${exp_dir}/triphones_lda_mllt_sat \
-    ${exp_dir}/triphones_lda_mllt_sat_aligned ||
-    printf "\n####\n#### ERROR: align_si.sh \n####\n\n" ||
-    exit 1
+    ${exp_dir}/tri_lda_mllt_sat_10k \
+    ${exp_dir}/tri_lda_mllt_sat_ali || exit 1
+
+  t1="$(date -u +%s.%N)"
+  elapsed="$(bc <<<"$t1-$t0")"
+  echo "Aligning LDA+MLLT+SAT triphones took: ${elapsed}s" >> logs/runtime_${script_start_time}
+
+  printf "### Train final SAT Triphones on all utterances ###\n"
+
+  t0="$(date -u +%s.%N)"
+
+  steps/train_sat.sh \
+    --cmd "$cmd" \
+    --num-iters $num_iters_tri \
+    4200 \
+    40000 \
+    ${data_dir}/${subset_name} \
+    ${data_dir}/lang \
+    ${exp_dir}/tri_lda_mllt_sat_ali \
+    ${exp_dir}/tri_sat_final || exit 1
+
+  t1="$(date -u +%s.%N)"
+  elapsed="$(bc <<<"$t1-$t0")"
+  echo "Training final SAT triphones took: ${elapsed}s" >> logs/runtime_${script_start_time}
+
+  ../../../src/gmmbin/gmm-info ${exp_dir}/tri_sat_final/final.mdl
 fi
 
 if [ "$save_model" -eq "1" ]; then

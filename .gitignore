@@ -2,6 +2,7 @@ data/
 exp/
 mfcc/
 external/
+logs/
 # raw can be a symlink
 raw
 
