@@ -13,10 +13,10 @@ model_dir=$2
 ### STAGES
 ##
 #
-prep_lm=1
+prep_lm=0
 prep_test_audio=0
 extract_test_feats=0
-compile_graph=1
+compile_graph=0
 decode_test=1
 #
 ##
@@ -64,7 +64,7 @@ if [ "$prep_lm" -eq "1" ]; then
   printf "#### PREPARING LM ####\n"
   printf "####==============####\n\n"
 
-  local/prepare_lm.sh || exit 1
+  local/prepare_lm.sh data/lang || exit 1
 
 fi
 
@@ -79,8 +79,7 @@ if [ "$compile_graph" -eq "1" ]; then
   utils/mkgraph.sh \
     ${data_dir}/lang \
     $model_dir \
-    ${model_dir}/graph ||
-    printf "\n####\n#### ERROR: mkgraph.sh \n####\n\n" || exit 1
+    ${model_dir}/graph || exit 1
 
 fi
 
@@ -90,15 +89,31 @@ if [ "$decode_test" -eq "1" ]; then
   printf "#### BEGIN DECODING ####\n"
   printf "####================####\n\n"
 
-  prompt_rm_dir ${model_dir}/decode
+#  prompt_rm_dir ${model_dir}/decode
+
+  # decode using the tri SAT model with pronunciation and silence probabilities
+  steps/get_prons.sh --cmd "$cmd" \
+        data/train-clean-100 ${data_dir}/lang $model_dir
+  utils/dict_dir_add_pronprobs.sh --max-normalize true \
+                                  data/local/dict \
+                                  ${model_dir}/pron_counts_nowb.txt ${model_dir}/sil_counts_nowb.txt \
+                                  ${model_dir}/pron_bigram_counts_nowb.txt data/local/dict_sp
+  utils/prepare_lang.sh data/local/dict_sp \
+                        "<UNK>" data/local/lang_tmp_sp data/lang_sp
+  local/prepare_lm.sh ${data_dir}/lang_sp
+
+  utils/mkgraph.sh \
+    ${data_dir}/lang_sp \
+    $model_dir \
+    ${model_dir}/graph_sp || exit 1
 
   steps/decode_fmllr.sh \
     --config ${config_dir}/decode.conf \
     --nj $num_procs \
     --cmd $cmd \
-    ${model_dir}/graph \
+    ${model_dir}/graph_sp \
     $test_acoustic_dir \
-    ${model_dir}/decode
+    ${model_dir}/decode_sp
 
 fi
 

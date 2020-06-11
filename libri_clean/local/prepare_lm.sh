@@ -1,5 +1,13 @@
 #1/usr/bin/env bash
 
+if [ "$#" -ne 1 ]; then
+    echo "ERROR: $0"
+    echo "USAGE: $0 <lang_dir>"
+    exit 1
+fi
+
+lang_dir=$1
+
 . ./path.sh
 
 # Download pretrained n-grams
@@ -10,5 +18,4 @@ if [ ! -f external/`basename $lm_name .gz` ]; then
     gunzip external/$lm_name
 fi
 
-lang=data/lang
-arpa2fst --disambig-symbol=#0 --read-symbol-table=$lang/words.txt external/`basename ${lm_url} .gz` $lang/G.fst
+arpa2fst --disambig-symbol=#0 --read-symbol-table=${lang_dir}/words.txt external/`basename ${lm_url} .gz` ${lang_dir}/G.fst

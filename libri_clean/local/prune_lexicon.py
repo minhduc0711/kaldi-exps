@@ -35,4 +35,4 @@ with open(args.dst, "w") as f:
                 f.write("{} {}\n".format(word, pronun))
         else:
             unknown_words.append(word)
-print("{} words are not in the lexicon: {}".format(len(unknown_words), unknown_words)
+print("{} words are not in the lexicon: {}".format(len(unknown_words), unknown_words))

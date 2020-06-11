@@ -43,15 +43,16 @@ fi
 raw_train_dir=$1
 
 . local/util_funcs.sh
+. ./path.sh
 
 ### STAGES
 ##
 #
 prep_train_audio=0
 extract_train_feats=0
-split_train_data=1
-compile_Lfst=0
-train_gmm=1
+split_train_data=0
+compile_Lfst=1
+train_gmm=0
 #
 ##
 ###

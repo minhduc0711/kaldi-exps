@@ -35,6 +35,7 @@
 #    data_dir
 #
 
+. ./path.sh
 . local/util_funcs.sh
 
 cmd=utils/run.pl
