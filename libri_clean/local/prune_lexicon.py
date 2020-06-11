@@ -13,6 +13,7 @@ with open(args.trans) as f:
     for line in f.readlines():
         _, transcript = line.strip().split(" ", 1)
         present_words.update(transcript.split(" "))
+present_words = sorted(list(present_words))
 
 # Collect all words & corresponding pronunications from the full lexicons
 pronun_dict = {}

@@ -35,7 +35,6 @@
 #    data_dir
 #
 
-. ./path.sh
 . local/util_funcs.sh
 
 cmd=utils/run.pl
@@ -82,7 +81,7 @@ if [ "$train_monophones" -eq "1" ]; then
     --cmd "$cmd" \
     --nj $num_processors \
     --boost-silence 1.25 \
-    --initial-beam 6 \
+    --num-iters $num_iters_mono \
     ${data_dir}/train-2k-shortest \
     ${data_dir}/lang \
     ${exp_dir}/mono || exit 1
@@ -132,6 +131,7 @@ if [ "$train_triphones" -eq "1" ]; then
   steps/train_deltas.sh \
     --cmd "$cmd" \
     --boost-silence 1.25 \
+    --num-iters $num_iters_tri \
     2000 \
     10000 \
     ${data_dir}/train-5k \
@@ -186,6 +186,7 @@ if [ "$adapt_models" -eq "1" ]; then
   steps/train_lda_mllt.sh \
     --cmd "$cmd" \
     --splice-opts "--left-context=3 --right-context=3" \
+    --num-iters $num_iters_tri \
     2500 \
     15000 \
     ${data_dir}/train-10k \
@@ -226,6 +227,7 @@ if [ "$adapt_models" -eq "1" ]; then
 
   steps/train_sat.sh \
     --cmd "$cmd" \
+    --num-iters $num_iters_tri \
     2500 \
     15000 \
     ${data_dir}/train-10k \

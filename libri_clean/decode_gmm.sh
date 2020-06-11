@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
 if [ "$#" -ne 2 ]; then
-  echo "USAGE: $0 <raw_test_dir> <model_dir>"
+  echo "USAGE: $0 <model_dir>"
   exit 1
 fi
 
-raw_test_dir=$1
-model_dir=$2
+model_dir=$1
 
+. ./path.sh
 . local/util_funcs.sh
 
 ### STAGES
@@ -31,6 +31,7 @@ data_dir=data
 exp_dir=exp
 mfcc_dir=mfcc
 
+raw_test_dir=raw/dev-clean
 test_subset_name=$(basename $raw_test_dir)
 test_acoustic_dir=${data_dir}/$test_subset_name
 

@@ -52,7 +52,7 @@ prep_train_audio=0
 extract_train_feats=0
 split_train_data=0
 compile_Lfst=1
-train_gmm=0
+train_gmm=1
 #
 ##
 ###
