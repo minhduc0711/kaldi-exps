@@ -81,8 +81,6 @@ if [ "$train_monophones" -eq "1" ]; then
     --cmd "$cmd" \
     --nj $num_processors \
     --boost-silence 1.25 \
-    --num-iters $num_iters_mono \
-    --totgauss $tot_gauss_mono \
     --initial-beam 6 \
     ${data_dir}/train-2k-shortest \
     ${data_dir}/lang \
@@ -102,8 +100,6 @@ if [ "$train_monophones" -eq "1" ]; then
     --cmd "$cmd" \
     --nj $num_processors \
     --boost-silence 1.25 \
-    --beam 10 \
-    --retry-beam 40 \
     ${data_dir}/train-5k \
     ${data_dir}/lang \
     ${exp_dir}/mono \
@@ -134,11 +130,9 @@ if [ "$train_triphones" -eq "1" ]; then
   # First triphone system on 5k subset
   steps/train_deltas.sh \
     --cmd "$cmd" \
-    --num-iters $num_iters_tri \
-    --beam 10 \
     --boost-silence 1.25 \
-    $num_leaves_tri \
-    $tot_gauss_tri \
+    2000 \
+    10000 \
     ${data_dir}/train-5k \
     ${data_dir}/lang \
     ${exp_dir}/mono_ali_5k \
@@ -157,8 +151,6 @@ if [ "$train_triphones" -eq "1" ]; then
   steps/align_si.sh \
     --cmd "$cmd" \
     --nj $num_processors \
-    --beam 10 \
-    --retry-beam 40 \
     ${data_dir}/train-10k \
     ${data_dir}/lang \
     ${exp_dir}/tri_5k \
@@ -192,7 +184,6 @@ if [ "$adapt_models" -eq "1" ]; then
 
   steps/train_lda_mllt.sh \
     --cmd "$cmd" \
-    --num-iters $num_iters_tri \
     --splice-opts "--left-context=3 --right-context=3" \
     2500 \
     15000 \
@@ -214,6 +205,7 @@ if [ "$adapt_models" -eq "1" ]; then
   steps/align_si.sh \
     --cmd "$cmd" \
     --nj $num_processors \
+    --use-graphs true \
     ${data_dir}/train-10k \
     ${data_dir}/lang \
     ${exp_dir}/tri_lda_mllt_10k \
@@ -233,7 +225,6 @@ if [ "$adapt_models" -eq "1" ]; then
 
   steps/train_sat.sh \
     --cmd "$cmd" \
-    --num-iters $num_iters_tri \
     2500 \
     15000 \
     ${data_dir}/train-10k \

@@ -22,7 +22,7 @@ decode_test=1
 ##
 ###
 
-num_procs=1
+num_procs=16
 config_dir=conf
 cmd="utils/run.pl"
 
