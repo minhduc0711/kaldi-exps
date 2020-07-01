@@ -12,8 +12,9 @@ subset_name=`basename $raw_data_dir`
 dest_dir=data/$subset_name
 mkdir -p $dest_dir
 
-# create "text" (utterance_id + transcript)
+# check whether there are invalid words in transcripts
 ./local/verify_words.py --text $raw_data_dir/prompts.txt || exit 1;
+# create "text" (utterance_id + transcript)
 cp $raw_data_dir/prompts.txt $dest_dir/text
 
 for audio_dir in ${raw_data_dir}/waves/*; do

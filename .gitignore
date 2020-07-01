@@ -3,7 +3,8 @@ exp/
 mfcc/
 external/
 logs/
-# raw can be a symlink
+lm/
+# raw can be a symlink so no forward slash
 raw
 
 .vscode

@@ -49,19 +49,16 @@ def get_clean_sentences(line):
     return res
 
 
-raw_text_paths = [
-    "raw/text_data_vn/VNESEcorpus.txt",
-    "raw/text_data_vn/vivos_train.txt",
-]
-
 parser = ap.ArgumentParser()
-parser.add_argument("output_path", type=str)
+parser.add_argument("--inputs", nargs="+",
+                    type=str, required=True)
+parser.add_argument("--output", type=str, required=True)
 args = parser.parse_args()
 
 punctuation = string.punctuation + "“”‘’…–"
 
-with open(args.output_path, 'w') as f_out:
-    for input_path in raw_text_paths:
+with open(args.output, 'w') as f_out:
+    for input_path in args.inputs:
         with open(input_path, 'r') as f_in:
             for line in tqdm(f_in.readlines(),
                              desc=f"Processing {input_path}"):
