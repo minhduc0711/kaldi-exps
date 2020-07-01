@@ -1,0 +1,6 @@
+$ python local/get_dataset_info.py raw/vivos/test
+	Number of utterances: 760
+	Total audio hours: 0.75h
+$ python local/get_dataset_info.py raw/vivos/train
+	Number of utterances: 11660
+	Total audio hours: 14.92h

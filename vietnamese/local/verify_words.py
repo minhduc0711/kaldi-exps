@@ -1,3 +1,5 @@
+#!/root/miniconda3/envs/asr/bin/python
+
 import sys
 import argparse as ap
 

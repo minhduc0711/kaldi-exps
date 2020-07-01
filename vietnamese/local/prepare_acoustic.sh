@@ -13,7 +13,7 @@ dest_dir=data/$subset_name
 mkdir -p $dest_dir
 
 # create "text" (utterance_id + transcript)
-python3 local/verify_words.py --text $raw_data_dir/prompts.txt || exit 1;
+./local/verify_words.py --text $raw_data_dir/prompts.txt || exit 1;
 cp $raw_data_dir/prompts.txt $dest_dir/text
 
 for audio_dir in ${raw_data_dir}/waves/*; do

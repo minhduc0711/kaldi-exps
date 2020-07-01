@@ -12,7 +12,7 @@ dest_dir=$2
 mkdir -p $dest_dir
 
 # Build lexicon
-python3 local/build_lexicon.py --text $train_data_dir/text --dst $dest_dir/lexicon.txt
+./local/build_lexicon.py --text $train_data_dir/text --dst $dest_dir/lexicon.txt
 
 # silence_phones.txt
 echo -e "SIL\\nSPN" > "${dest_dir}/silence_phones.txt"
