@@ -21,3 +21,5 @@ if len(invalid_words) > 0:
     invalid_str = " ".join(invalid_words)
     print(f"Found invalid words in transcript: {invalid_str}")
     sys.exit(1)
+else:
+    print("Transcript verified")

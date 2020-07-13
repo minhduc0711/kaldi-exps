@@ -5,13 +5,13 @@
 . ./path.sh
 
 ### STAGES
-prep_acoustic=1
-extract_feats=1
-split_train_data=1
-prep_lang_train=1
-train_gmm=1
-train_lm=1
-decode_gmm=1
+prep_acoustic=0
+extract_feats=0
+split_train_data=0
+prep_lang_train=0
+train_gmm=0
+train_lm=0
+decode_gmm=0
 
 num_procs=16
 
@@ -26,10 +26,24 @@ if [ "$prep_acoustic" -eq "1" ]; then
   printf "####    ACOUSTIC DATA PREP    ####\n"
   printf "####==========================####\n\n"
 
+  # VIVOS
   for raw_dir in raw/vivos/{train,test}; do
-    prompt_rm_dir $raw_dir
-    local/prepare_acoustic.sh $raw_dir || exit 1
+    dest_dir=data/vivos_$(basename $raw_dir)
+    prompt_rm_dir $dest_dir
+    local/prepare_acoustic_vivos.sh $raw_dir $dest_dir || exit 1
   done
+
+  # VAIS1000
+  prompt_rm_dir data/vais1000_{train,test}
+  ./local/prepare_acoustic_vais1000.sh raw/vais1000/ data/vais1000 || exit 1
+  # train/test split
+  ./utils/split_data.sh data/vais1000/ 5
+  ./utils/combine_data.sh data/vais1000_train/ data/vais1000/split5/{1,2,3,4}
+  mv data/vais1000/split5/5/ data/vais1000_test/
+  
+  # combine two datasets
+  ./utils/combine_data.sh data/train data/{vivos,vais1000}_train
+  ./utils/combine_data.sh data/test data/{vivos,vais1000}_test 
 fi
 
 if [ "$extract_feats" -eq "1" ]; then
@@ -101,4 +115,4 @@ if [ $decode_gmm -eq 1 ]; then
   ./local/decode_gmm.sh exp/tri_sat_final/ data/test $num_procs
 fi
 
-exit
+exit 0
